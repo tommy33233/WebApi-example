@@ -1,0 +1,181 @@
+﻿<div id="tableBlock"></div>
+<div id="editBlock">
+    <p><b>Редактирование книги</b></p>
+    <table>
+        <tr><td><input type="hidden" id="editCountryId" /></td><td></td></tr>
+        <tr><td><label>Название: </label></td><td><input type="text" id="editName"/></td></tr>
+        <tr><td><label>Краткое название: </label></td><td><input type="text" id="editSortName" /></td></tr>
+        <tr><td><label>PhoneCode: </label></td><td><input type="text" id="editPhonecode" /></td></tr>
+        <tr><td><label>Info: </label></td><td><input type="number" id="editInfo"/></td></tr>
+        <tr><td><label>ImageName: </label></td><td><input type="number" id="editImageName"/></td></tr>
+    </table>
+    <button id="editCountry">Сохранить</button>
+</div>
+<div id="createBlock">
+    <p><b>Добавление</b></p>
+    <table>
+        <tr><td><label>Название: </label></td><td><input type="text" id="addName"/></td></tr>
+        <tr><td><label>Краткое название: </label></td><td><input type="text" id="addSortName" /></td></tr>
+        <tr><td><label>PhoneCode: </label></td><td><input type="text" id="addPhonecode" /></td></tr>
+        <tr><td><label>Info: </label></td><td><input type="number" id="addInfo"/></td></tr>
+        <tr><td><label>ImageName: </label></td><td><input type="number" id="addImageName" /></td></tr>
+    </table>
+    <button id="addCountry">Сохранить</button>
+</div>
+@section scripts
+{
+    <script type="text/javascript">
+    $(document).ready(function () {
+
+        GetAllCountries();
+
+        $("#editCountry").click(function (event) {
+            event.preventDefault();
+            EditCountry();
+        });
+
+        $("#addCountry").click(function (event) {
+            event.preventDefault();
+            AddCountry();
+        });
+
+    });
+    // Получение всех книг по ajax-запросу
+    function GetAllCountries() {
+
+        $("#createBlock").css('display', 'block');
+        $("#editBlock").css('display', 'none');
+        $.ajax({
+            url: '/api/values',
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                WriteResponse(data);
+            },
+            error: function (x, y, z) {
+                alert(x + '\n' + y + '\n' + z);
+            }
+        });
+    }
+ // Добавление новой книги
+    function AddCountry() {
+        // получаем значения для добавляемой книги
+        var country = {
+            Name: $('#addName').val(),
+            SortName: $('#addSortName').val(),
+            Phonecode: $('#addPhonecode').val(),
+            Info: $('#addInfo').val(),
+            ImageName: $('#addImageName').val()
+        };
+
+        $.ajax({
+            url: '/api/values/',
+            type: 'POST',
+            data: JSON.stringify(country),
+            contentType: "application/json;charset=utf-8",
+            success: function (data) {
+                GetAllCountries();
+            },
+            error: function (x, y, z) {
+                alert(x + '\n' + y + '\n' + z);
+            }
+        });
+    }
+ // Удаление книги
+    function DeleteCountry(id) {
+
+        $.ajax({
+            url: '/api/values/' + id,
+            type: 'DELETE',
+            contentType: "application/json;charset=utf-8",
+            success: function (data) {
+                GetAllCountries();
+            },
+            error: function (x, y, z) {
+                alert(x + '\n' + y + '\n' + z);
+            }
+        });
+    }
+    // редактирование книги
+    function EditCountry() {
+        debugger;
+        var id = $('#editCountryId').val();
+        // получаем новые значения для редактируемой книги
+        var country = {
+            CountryId: $('#editCountryId').val(),
+            Name: $('#editName').val(),
+            SortName: $('#editSortName').val(),
+            Phonecode: $('#editPhonecode').val(),
+            Info: $('#editInfo').val(),
+            ImageName: $('#editImageName').val()
+        };
+        $.ajax({
+            url: '/api/values/' + id,
+            type: 'PUT',
+            data: JSON.stringify(country),
+            contentType: "application/json;charset=utf-8",
+            success: function (data) {
+                GetAllCountries();
+            },
+            error: function (x, y, z) {
+                alert(x + '\n' + y + '\n' + z);
+            }
+        });
+    }
+ // вывод полученных данных на экран
+    function WriteResponse(countries) {
+        var strResult = "<table><th>ID</th><th>Название</th><th>Краткое Название</th><th>Phonecode</th><th>Info</th><th>Image</th>";
+        $.each(countries, function (index, country) {
+            strResult += "<tr><td>" + country.CountryId + "</td><td> " + country.Name + "</td><td>" +
+            country.SortName + "</td><td>" + country.Phonecode + "</td><td>" + country.Info+"</td><td>" + country.ImageName+ "</td><td>" +
+            "</td><td><a id='editItem' data-item='" + country.CountryId + "' onclick='EditItem(this);' >Редактировать</a></td>" +
+            "<td><a id='delItem' data-item='" + country.CountryId + "' onclick='DeleteItem(this);' >Удалить</a></td></tr>";
+        });
+        strResult += "</table>";
+        $("#tableBlock").html(strResult);
+
+    }
+    // обработчик удаления
+    function DeleteItem(el) {
+        // получаем id удаляемого объекта
+        var id = $(el).attr('data-item');
+        DeleteCountry(id);
+    }
+    // обработчик редактирования
+    function EditItem (el) {
+        // получаем id редактируемого объекта
+        var id = $(el).attr('data-item');
+        GetCountry(id);
+    }
+    // вывод данных редактируемой книги в поля для редактирования
+    function ShowCountry(country) {
+        if (country != null) {
+            $("#createBlock").css('display', 'none');
+            $("#editBlock").css('display', 'block');
+            $("#editCountryId").val(country.CountryId);
+            $("#editName").val(country.Name);
+            $("#editSortName").val(country.SortName);
+            $("#editPhonecode").val(country.Phonecode);
+            $("#editInfo").val(country.Info);
+            $("#editImageName").val(country.ImageName);
+        }
+        else {
+            alert("Такая страна не существует");
+        }
+    }
+    // запрос книги на редактирование
+    function GetCountry(id) {
+        $.ajax({
+            url: '/api/values/' + id,
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                ShowCountry(data);
+            },
+            error: function (x, y, z) {
+                alert(x + '\n' + y + '\n' + z);
+            }
+        });
+    }
+    </script>
+}
